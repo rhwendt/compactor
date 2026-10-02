@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.1 (2026-10-02)
+
+- Fix: the context window is read from the transcript's most recent model-identity entry.
+  Previously only the first 64 KB was searched, so long or resumed sessions fell back to a
+  guess. On a 1M model that could mean an assumed 200k window and a 180k safety ceiling.
+
+## 0.1.0 (2026-10-01)
 
 Initial release.
 
