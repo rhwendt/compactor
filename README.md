@@ -103,9 +103,9 @@ If you already have a status line script, pipe its stdin into that command and a
 output.
 
 Exact context percentages come from, in order: an explicit `COMPACTOR_CONTEXT_WINDOW`; the
-size this status line reported; a `model` ending in `[1m]` seen at session start; the model
-identity Claude Code writes into the transcript before the agent's first reply, which also
-carries an `[1m]` suffix in 1M mode. Failing all of those, compactor assumes 200k until usage
+size this status line reported; a `model` ending in `[1m]` seen at session start; the latest
+model identity Claude Code writes into the transcript (before the agent's first reply and after
+each compaction), which also carries an `[1m]` suffix in 1M mode. Failing all of those, compactor assumes 200k until usage
 passes 200k, and flags the guess in the context lines — "window size assumed" — since the
 percentage (not the token counts) may then be wrong. The guess errs low on purpose: the safety
 ceiling then lands early rather than past a 200k model's real limit.

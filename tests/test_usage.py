@@ -155,10 +155,31 @@ class ReadModelIdTest(TempEnvTestCase):
                 path = write_transcript(self.tmp / "t.jsonl", [bad])
                 self.assertIsNone(read_model_id(path))
 
-    def test_beyond_max_bytes_is_none(self):
+    def test_latest_identity_wins(self):
+        # Seen live: a resumed 78 MB session started on one model and switched; Claude Code writes
+        # a fresh identity entry after every compaction.
+        path = write_transcript(self.tmp / "t.jsonl", [
+            identity_entry("claude-fable-5-1"), user_entry("x" * 100_000),
+            identity_entry("claude-opus-5-5[1m]"), assistant_entry(input_tokens=1)])
+        self.assertEqual(read_model_id(path), "claude-opus-5-5[1m]")
+
+    def test_identity_deep_into_a_long_transcript_is_found(self):
+        # The old reader only looked at the first 64 KB; this session's first identity was 12 MB in.
+        path = write_transcript(self.tmp / "t.jsonl", [
+            *[user_entry("x" * 10_000) for _ in range(20)],
+            identity_entry("claude-opus-5-5[1m]"), user_entry("y" * 10_000)])
+        self.assertEqual(read_model_id(path), "claude-opus-5-5[1m]")
+
+    def test_falls_back_to_the_start_when_the_tail_has_none(self):
+        path = write_transcript(self.tmp / "t.jsonl", [
+            identity_entry("claude-opus-5-5[1m]"), *[user_entry("x" * 200) for _ in range(50)]])
+        self.assertEqual(read_model_id(path, tail_bytes=256), "claude-opus-5-5[1m]")
+
+    def test_beyond_both_scans_is_none(self):
         entries = [user_entry("x" * 200) for _ in range(50)] + [identity_entry("claude-opus-5-5[1m]")]
+        entries += [user_entry("y" * 200) for _ in range(50)]
         path = write_transcript(self.tmp / "t.jsonl", entries)
-        self.assertIsNone(read_model_id(path, max_bytes=256))
+        self.assertIsNone(read_model_id(path, head_bytes=256, tail_bytes=256))
 
 
 class WindowForModelTest(unittest.TestCase):

@@ -108,34 +108,41 @@ def read_last_usage(path: Any, block: int = BLOCK_BYTES, max_bytes: int = MAX_SC
     return context[0] if context is not None else None
 
 
-def read_model_id(path: Any, max_bytes: int = 65536) -> Optional[str]:
-    """The first attachment.identity.modelId within the first max_bytes of the transcript, or None.
-
-    Claude Code writes this model-identity attachment before the agent's first reply, so it is
-    available even in headless runs where the SessionStart payload has no `model` field.
-    """
+def _identity_model_id(line: bytes) -> Optional[str]:
+    """The attachment.identity.modelId on one transcript line, or None."""
+    if b'"identity"' not in line:  # cheap filter: most lines are never parsed
+        return None
     try:
+        entry = json.loads(line)
+    except ValueError:
+        return None
+    if not isinstance(entry, dict) or entry.get("type") != "attachment":
+        return None
+    attachment = entry.get("attachment")
+    identity = attachment.get("identity") if isinstance(attachment, dict) else None
+    model_id = identity.get("modelId") if isinstance(identity, dict) else None
+    return model_id if isinstance(model_id, str) else None
+
+
+def read_model_id(path: Any, tail_bytes: int = MAX_SCAN_BYTES, head_bytes: int = 65536) -> Optional[str]:
+    """The model id from the transcript's most recent model-identity attachment, or None.
+
+    Claude Code writes one before the agent's first reply (so it is there even in headless runs
+    where SessionStart has no `model`) and again after each compaction, and the model can change
+    mid-session. So the latest within the last tail_bytes wins; failing that, the first within
+    the first head_bytes. A long resumed session can put its first one megabytes in."""
+    try:
+        for line in _lines_reversed(path, min(BLOCK_BYTES, tail_bytes), tail_bytes):
+            model_id = _identity_model_id(line)
+            if model_id is not None:
+                return model_id
         with open(path, "rb") as f:
-            data = f.read(max_bytes)
+            head = f.read(head_bytes)
     except OSError:
         return None
-    for line in data.split(b"\n"):
-        if not line.strip():
-            continue
-        try:
-            entry = json.loads(line)
-        except ValueError:
-            continue
-        if not isinstance(entry, dict) or entry.get("type") != "attachment":
-            continue
-        attachment = entry.get("attachment")
-        if not isinstance(attachment, dict):
-            continue
-        identity = attachment.get("identity")
-        if not isinstance(identity, dict):
-            continue
-        model_id = identity.get("modelId")
-        if isinstance(model_id, str):
+    for line in head.split(b"\n"):
+        model_id = _identity_model_id(line)
+        if model_id is not None:
             return model_id
     return None
 
