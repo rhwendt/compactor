@@ -6,7 +6,7 @@
     {
       "name": "compactor",
       "description": "Agent-controlled auto-compaction with handoff notes",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "source": "./",
       "author": { "name": "Ryan Wendt" }
     }
