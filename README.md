@@ -49,6 +49,56 @@ so a threshold at or above it leaves the agent no room to hold.
 
 Restart Claude Code. The agent is told about the commands at session start.
 
+### Per project or per session
+
+The plugin and the threshold are set separately, and each can be global, per project, or (for
+the threshold) per session.
+
+**Where the plugin is installed.** Pass `--scope` when installing from a shell in the project
+folder:
+
+```sh
+claude plugin marketplace add rhwendt/compactor --scope local
+claude plugin install compactor@compactor --scope local
+```
+
+| Scope | Active in | Recorded in |
+|---|---|---|
+| `user` (default) | all your projects | `~/.claude/settings.json` |
+| `project` | this project, for everyone using the repo | `.claude/settings.json` (committed) |
+| `local` | this project, just you | `.claude/settings.local.json` (not committed) |
+
+**Where the threshold is set.** Put the `env` block in the matching settings file:
+
+| To enable compactor for | Set `CLAUDE_CODE_AUTO_COMPACT_WINDOW` in |
+|---|---|
+| every project | `~/.claude/settings.json` |
+| one project, everyone | the project's `.claude/settings.json` |
+| one project, just you | the project's `.claude/settings.local.json` |
+| one session | `claude --settings '{"env":{"CLAUDE_CODE_AUTO_COMPACT_WINDOW":"350000"}}'` |
+
+Project settings override your user settings, and `--settings` overrides both. A value in any
+settings file also beats one from your shell, so `CLAUDE_CODE_AUTO_COMPACT_WINDOW=500000 claude`
+or an `export` in your shell profile has no effect while a settings file sets the variable.
+The `COMPACTOR_*` options below can go in the same `env` blocks.
+
+For example, to use compactor in one project only, install it with `--scope local` and add
+this to that project's `.claude/settings.local.json`:
+
+```json
+{ "env": { "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "350000" } }
+```
+
+### Updating
+
+Claude Code caches an installed plugin by version. To pick up a new release, run both
+commands, then start a new session:
+
+```sh
+claude plugin marketplace update compactor
+claude plugin update compactor@compactor
+```
+
 ## How the agent uses it
 
 | Command | Effect |
