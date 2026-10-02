@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 (2026-10-02)
+
+- `compactor status` lists running Agent-tool subagents (foreground/background), as text and in
+  `--json`, so the agent can check before releasing. Background shell commands and monitors
+  aren't visible to compactor, and the line says so.
+- Skill guidance: one hold can span many tasks, so there's no need to re-hold per task; and a
+  handoff note should end with the first thing to do after compaction.
+
 ## 0.1.1 (2026-10-02)
 
 - Fix: the context window is read from the transcript's most recent model-identity entry.

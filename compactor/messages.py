@@ -223,8 +223,19 @@ def note_set(chars: int) -> str:
             "until you replace or clear it.")
 
 
+def subagents_line(active: Sequence[ActiveSubagent]) -> str:
+    scope = "(compactor sees Agent-tool subagents only, not background shell commands or monitors)"
+    if not active:
+        return f"subagents: none running {scope}"
+    foreground = sum(1 for sub in active if sub.foreground)
+    return (f"subagents: {len(active)} running ({foreground} foreground, "
+            f"{len(active) - foreground} background) {scope}")
+
+
 def status_text(state: State, usage: Optional[Usage], settings: Settings, now: datetime,
-                last_err: Optional[str]) -> str:
+                last_err: Optional[str],
+                subagents: Optional[Sequence[ActiveSubagent]] = None) -> str:
+    """`subagents` None means unknown, and the line is left out rather than guessed."""
     if settings.active:
         mode = f"active (threshold {fmt_tokens(settings.threshold or 0)})"
     elif settings.disabled:
@@ -241,6 +252,8 @@ def status_text(state: State, usage: Optional[Usage], settings: Settings, now: d
         lines.append(f"note: {preview[:77] + '...' if len(preview) > 80 else preview}")
     else:
         lines.append("note: none")
+    if subagents is not None:
+        lines.append(subagents_line(subagents))
     lines.append(context_line(usage, settings, holding=state.hold is not None))
     lines.extend(f"config warning: {warning}" for warning in settings.warnings)
     if last_err:

@@ -25,6 +25,10 @@ compaction yourself. Releasing lets the next automatic check go through.
 - A long autonomous run
 - Before dispatching a subagent whose result you must act on (see "Subagents" below)
 
+One hold can span many tasks: give it a reason that covers the stretch, such as
+`compactor hold "executing plan 7, tasks 11-15"`. You don't need a new hold per task. Running
+`hold` again only updates the reason and keeps the original start time.
+
 ## When to release
 
 - A task is done, tests are green, or a commit landed
@@ -36,12 +40,16 @@ compaction yourself. Releasing lets the next automatic check go through.
 
 Before releasing, write down anything that isn't on disk yet and that you'd need after
 compaction: the current hypothesis, the next steps, the file:line references in play, and
-decisions made. Prefer `compactor release --note "..."` so the note and the release happen
-together. A note persists across compactions until you replace or clear it, so clear stale
+decisions made. End the note with the first thing to do after compaction, such as "read the
+tail of docs/ledger.md", so you resume from that rather than by exploring. Prefer
+`compactor release --note "..."` so the note and the release happen together. A note persists across compactions until you replace or clear it, so clear stale
 notes with `compactor note --clear`.
 
 ## Subagents
 
+- Before releasing, check `compactor status`: its `subagents:` line shows any running
+  Agent-tool subagents. It can't see background shell commands or monitors, so check your
+  own task list for those.
 - Before dispatching a subagent whose report you must act on, hold:
   `compactor hold "waiting on <task> report"`. Keep holding after the report arrives until you
   have analysed it and done the work it calls for (edits, tests, a handoff note), then release.

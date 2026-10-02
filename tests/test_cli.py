@@ -8,7 +8,7 @@ import sys
 import time
 from unittest import mock
 
-from compactor import cli
+from compactor import cli, subagents
 from compactor.cli import MAX_NOTE_CHARS, main
 from compactor.state import Hold, Note, NudgeState, State, load, save
 from tests.helpers import NOW, REPO_ROOT, SESSION, TempEnvTestCase, iso_minutes_ago
@@ -145,6 +145,13 @@ class StatusTest(CliTestCase):
         self.assertEqual(data["hold"]["reason"], "refactor")
         self.assertEqual(data["usage"]["pct"], 41.0)
         self.assertTrue(data["active"])
+
+    def test_text_and_json_list_running_subagents(self):
+        self.assertIn("subagents: none running", self.run_cli("status")[1])
+        subagents.mark_started(SESSION, "a1", NOW, self.env)  # no meta.json: shape unknown, so background
+        self.assertIn("subagents: 1 running (0 foreground, 1 background)", self.run_cli("status")[1])
+        data = json.loads(self.run_cli("status", "--json")[1])
+        self.assertEqual(data["subagents"], [{"agent_id": "a1", "foreground": False, "used": None}])
 
     def test_line_uses_statusline_stdin_and_caches_window(self):
         env = dict(self.env)
