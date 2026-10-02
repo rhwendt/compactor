@@ -1,0 +1,13 @@
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What you'd like compactor to do, and the situation that prompted it.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: How you use compactor today, such as long autonomous sessions, subagent-heavy work or a particular threshold.

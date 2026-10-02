@@ -1,0 +1,25 @@
+{
+    "session_id": "sess-123",
+    "transcript_path": "/tmp/compactor-fixture/transcript.jsonl",
+    "cwd": "/tmp/compactor-fixture",
+    "prompt_id": "1e909bf4-186e-452a-8179-ecb3a718036f",
+    "permission_mode": "default",
+    "effort": {
+        "level": "medium"
+    },
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+        "command": "true",
+        "description": "Run true command"
+    },
+    "tool_response": {
+        "stdout": "",
+        "stderr": "",
+        "interrupted": false,
+        "isImage": false,
+        "noOutputExpected": false
+    },
+    "tool_use_id": "toolu_014QRf3bBtrokfM2g7cWmafS",
+    "duration_ms": 883
+}

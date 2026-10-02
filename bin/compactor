@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+"""Agent CLI for the compactor plugin. The plugin's bin/ is on the Bash tool's PATH."""
+from __future__ import annotations
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from compactor.cli import main  # noqa: E402
+
+
+def _utf8_stdio() -> None:
+    """Hold reasons and notes are UTF-8; don't let a legacy console encoding (e.g. cp1252) fail them."""
+    for stream, kw in ((sys.stdin, {"encoding": "utf-8"}),
+                       (sys.stdout, {"encoding": "utf-8", "errors": "replace"}),
+                       (sys.stderr, {"encoding": "utf-8", "errors": "replace"})):
+        try:
+            stream.reconfigure(**kw)
+        except (AttributeError, ValueError, OSError):
+            pass
+
+
+if __name__ == "__main__":
+    _utf8_stdio()
+    sys.exit(main())

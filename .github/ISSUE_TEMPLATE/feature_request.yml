@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest a concrete change to how compactor behaves.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For an early idea you'd like to talk through first, start an [Ideas discussion](https://github.com/rhwendt/compactor/discussions/new?category=ideas).
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you were trying to do, and where compactor got in the way or fell short.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What compactor should do instead. Include any new command, setting or message wording.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways around the problem, such as settings, skill guidance or a Claude Code feature.
+  - type: checkboxes
+    id: harness
+    attributes:
+      label: Claude Code behavior
+      options:
+        - label: This depends on something Claude Code itself would have to change, such as a hook payload field.

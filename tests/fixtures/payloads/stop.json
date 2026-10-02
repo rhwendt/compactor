@@ -1,0 +1,15 @@
+{
+    "session_id": "sess-123",
+    "transcript_path": "/tmp/compactor-fixture/transcript.jsonl",
+    "cwd": "/tmp/compactor-fixture",
+    "prompt_id": "f8a0a9ca-1c1f-4edb-a348-2cd10887e131",
+    "permission_mode": "default",
+    "effort": {
+        "level": "medium"
+    },
+    "hook_event_name": "Stop",
+    "stop_hook_active": false,
+    "last_assistant_message": "`false` exited with code 1, which is what it always does.\n\ndone",
+    "background_tasks": [],
+    "session_crons": []
+}

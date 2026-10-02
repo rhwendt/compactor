@@ -1,0 +1,88 @@
+name: Bug report
+description: compactor did something wrong, such as blocking or allowing a compaction it shouldn't have, a hook error, or a wrong context figure.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. `compactor status` and the error log are usually enough to diagnose a problem, so please include them.
+        For a usage question, start a [Q&A discussion](https://github.com/rhwendt/compactor/discussions/new?category=q-a) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+      placeholder: The agent had a hold set at 120k, but the session still auto-compacted.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that shows it. Say whether the session was interactive or `claude -p`, and whether subagents were running.
+      placeholder: |
+        1. Set CLAUDE_CODE_AUTO_COMPACT_WINDOW=100000
+        2. Ask the agent to run `compactor hold "test"`
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: status
+    attributes:
+      label: Output of `compactor status`
+      description: Run it in the affected session (or ask the agent to). It shows the hold, the context figures and any config warnings.
+      render: text
+  - type: textarea
+    id: errors
+    attributes:
+      label: Error log
+      description: The last few entries of `${XDG_STATE_HOME:-~/.local/state}/claude-compactor/errors.log`, if the file exists.
+      render: text
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings
+      description: Your `CLAUDE_CODE_AUTO_COMPACT_WINDOW` and any `COMPACTOR_*` variables you set.
+      placeholder: |
+        CLAUDE_CODE_AUTO_COMPACT_WINDOW=350000
+        COMPACTOR_CEILING_PCT=90
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: claude-code-version
+    attributes:
+      label: Claude Code version
+      description: Output of `claude --version`.
+      placeholder: 2.1.284
+    validations:
+      required: true
+  - type: input
+    id: compactor-version
+    attributes:
+      label: compactor version
+      description: Shown by `claude plugin list`.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The model the session ran on, including any `[1m]` suffix.
+      placeholder: claude-opus-5-5[1m]
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Linux, macOS, Windows, WSL, Other]
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      description: Output of `python3 --version`.
+      placeholder: Python 3.12.4
+    validations:
+      required: true

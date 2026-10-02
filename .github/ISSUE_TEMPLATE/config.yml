@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or help
+    url: https://github.com/rhwendt/compactor/discussions/new?category=q-a
+    about: Ask how to set compactor up or how it behaves.
+  - name: Idea or discussion
+    url: https://github.com/rhwendt/compactor/discussions/new?category=ideas
+    about: Talk through an idea before it becomes a feature request.
+  - name: Report a security vulnerability
+    url: https://github.com/rhwendt/compactor/security/advisories/new
+    about: Report it privately. Please don't open a public issue.

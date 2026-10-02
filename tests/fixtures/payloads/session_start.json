@@ -1,0 +1,7 @@
+{
+    "session_id": "sess-123",
+    "transcript_path": "/tmp/compactor-fixture/transcript.jsonl",
+    "cwd": "/tmp/compactor-fixture",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+}

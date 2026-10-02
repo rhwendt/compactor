@@ -1,0 +1,14 @@
+{
+  "name": "compactor",
+  "description": "Marketplace for the compactor Claude Code plugin",
+  "owner": { "name": "Ryan Wendt" },
+  "plugins": [
+    {
+      "name": "compactor",
+      "description": "Agent-controlled auto-compaction with handoff notes",
+      "version": "0.1.0",
+      "source": "./",
+      "author": { "name": "Ryan Wendt" }
+    }
+  ]
+}

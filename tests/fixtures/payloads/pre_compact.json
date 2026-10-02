@@ -1,0 +1,9 @@
+{
+    "session_id": "sess-123",
+    "transcript_path": "/tmp/compactor-fixture/transcript.jsonl",
+    "cwd": "/tmp/compactor-fixture",
+    "prompt_id": "440fe264-24a5-4a9c-8022-a454410eaba9",
+    "hook_event_name": "PreCompact",
+    "trigger": "manual",
+    "custom_instructions": null
+}

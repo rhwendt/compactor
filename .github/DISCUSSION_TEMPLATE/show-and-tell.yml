@@ -1,0 +1,14 @@
+body:
+  - type: textarea
+    id: share
+    attributes:
+      label: What you'd like to share
+      description: A workflow, setting combination, status line or skill tweak that works well with compactor.
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Setup
+      description: The settings involved, so others can try it.
+      render: text
