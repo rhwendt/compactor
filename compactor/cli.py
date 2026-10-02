@@ -12,12 +12,13 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import IO, Any, Dict, List, Mapping, Optional
 
-from . import messages
+from . import messages, subagents
 from .config import Settings, load_settings
 from .state import (
     Hold, Note, NudgeState, State, last_error, load, sanitize_session_id, save, state_dir,
     to_iso, utcnow,
 )
+from .model import ActiveSubagent
 from .usage import Usage, find_transcript, read_usage, usage_from_statusline
 
 SESSION_VAR = "CLAUDE_CODE_SESSION_ID"
@@ -164,12 +165,24 @@ def _note(args: argparse.Namespace, session_id: str, settings: Settings,
     return messages.note_set(len(text))
 
 
+def _running_subagents(session_id: str, settings: Settings, env: Mapping[str, str],
+                       now: datetime) -> Optional[List[ActiveSubagent]]:
+    """Subagents the hooks are tracking, or None when inactive or unreadable (status only shows it)."""
+    if not settings.active:
+        return None
+    try:
+        return subagents.running(session_id, find_transcript(session_id, env), now, env)
+    except Exception:  # informational: never let it break status
+        return None
+
+
 def _status(args: argparse.Namespace, session_id: str, settings: Settings,
             env: Mapping[str, str], now: datetime) -> str:
     state = load(session_id, env)
     usage = _usage(session_id, state, settings, env)
+    active = _running_subagents(session_id, settings, env, now)
     if not args.json:
-        return messages.status_text(state, usage, settings, now, last_error(env))
+        return messages.status_text(state, usage, settings, now, last_error(env), active)
     data: Dict[str, Any] = {
         "session_id": session_id,
         "active": settings.active,
@@ -183,6 +196,10 @@ def _status(args: argparse.Namespace, session_id: str, settings: Settings,
             "pct": round(usage.pct, 1),
             "ceiling": settings.ceiling_tokens(usage.window),
         },
+        "subagents": None if active is None else [
+            {"agent_id": sub.agent_id, "foreground": sub.foreground,
+             "used": sub.usage.used if sub.usage is not None else None}
+            for sub in active],
         "warnings": list(settings.warnings),
         "last_error": last_error(env),
     }

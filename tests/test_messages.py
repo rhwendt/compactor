@@ -4,6 +4,7 @@ import unittest
 
 from compactor import messages as m
 from compactor.config import Settings
+from compactor.model import ActiveSubagent
 from compactor.state import CeilingOverride, Hold, Note, State
 from compactor.usage import Usage
 from tests.helpers import NOW, iso_minutes_ago
@@ -172,6 +173,15 @@ class CliMessagesTest(unittest.TestCase):
             self.assertIn(part, text)
         held = m.status_text(State(hold=HOLD), None, S, NOW, None)
         self.assertIn("hold: mid-refactor of auth (10m)", held)
+
+    def test_status_text_lists_running_subagents(self):
+        none = m.status_text(State(), None, S, NOW, None, subagents=[])
+        self.assertIn("subagents: none running", none)
+        self.assertIn("not background shell commands or monitors", none)
+        two = m.status_text(State(), None, S, NOW, None, subagents=[
+            ActiveSubagent("a1", None, foreground=True), ActiveSubagent("a2", None)])
+        self.assertIn("subagents: 2 running (1 foreground, 1 background)", two)
+        self.assertNotIn("subagents:", m.status_text(State(), None, S, NOW, None))  # unknown: no line
 
 
 if __name__ == "__main__":

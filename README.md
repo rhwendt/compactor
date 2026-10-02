@@ -106,7 +106,7 @@ claude plugin update compactor@compactor
 | `compactor hold "<why>"` | Blocks auto-compaction until released. A reason is required. |
 | `compactor release [--note "<text>"]` | Allows compaction again, optionally saving a handoff note. |
 | `compactor note "<text>"` / `--clear` | Sets or clears the handoff note. |
-| `compactor status [--json \| --line]` | Shows the hold, the note, and context usage. |
+| `compactor status [--json \| --line]` | Shows the hold, the note, running subagents, and context usage. |
 
 While a hold is set and context is past the threshold, the agent receives nudges that get
 firmer as usage grows. Each one ends with three lines like:
