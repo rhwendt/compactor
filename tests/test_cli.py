@@ -141,7 +141,9 @@ class NoteFileTest(CliTestCase):
         code, out, _ = self.run_cli("note", "--file", "progress.md")
         self.assertEqual(code, 0)
         note = load(SESSION, self.env).note
-        self.assertEqual((note.text, note.file), ("resume at task 12", str(self.ledger)))
+        # os.getcwd() is the resolved path (on macOS /var is /private/var), as the CLI sees it.
+        self.assertEqual((note.text, note.file), ("resume at task 12", os.path.join(os.getcwd(), "progress.md")))
+        self.assertTrue(os.path.isabs(note.file))
         self.assertIn("progress.md", out)
 
     def test_note_text_and_file_together_and_release_with_file(self):

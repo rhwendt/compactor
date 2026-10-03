@@ -113,7 +113,7 @@ def read_file_tail(path: str, max_lines: int = NOTE_FILE_LINES, max_chars: int =
             f.seek(0, os.SEEK_END)
             size = f.tell()
             f.seek(max(0, size - max_chars * 4))  # enough bytes for max_chars of UTF-8
-            data = f.read().decode("utf-8", errors="replace")
+            data = f.read().decode("utf-8", errors="replace").replace("\r\n", "\n")
     except OSError:
         return None
     lines = data.rstrip("\n").split("\n")[-max_lines:]

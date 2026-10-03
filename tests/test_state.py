@@ -129,6 +129,8 @@ class FileTailTest(TempEnvTestCase):
         path = self.tmp / "f.md"
         path.write_text("".join(f"l{i}\n" for i in range(100)), encoding="utf-8")
         self.assertEqual(read_file_tail(str(path), max_lines=3), "l97\nl98\nl99")
+        path.write_bytes(b"one\r\ntwo\r\n")  # Windows line endings
+        self.assertEqual(read_file_tail(str(path)), "one\ntwo")
         path.write_text("a" * 10_000, encoding="utf-8")
         self.assertEqual(len(read_file_tail(str(path), max_chars=100)), 100)
 
