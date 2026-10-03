@@ -6,7 +6,9 @@ from __future__ import annotations
 
 from typing import List
 
-from .. import messages, subagents
+from .. import messages, subagents, tasks
+from ..model import Note
+from ..state import read_file_tail
 from ..usage import LARGE_WINDOW
 from ._common import HookContext, HookResult, with_context
 
@@ -43,10 +45,23 @@ def handle(ctx: HookContext) -> HookResult:
             except OSError:
                 pass  # the notice may repeat later; don't lose this output over it
         if state.note is not None:
-            parts.append(messages.handoff(state.note, after_compaction=True))
+            parts.append(_handoff(state.note, after_compaction=True))
+        if state.tasks and tasks.prune(state, ctx.transcript_path):
+            try:
+                ctx.save_state(state)
+            except OSError:
+                pass  # the list is rebuilt from the transcript next time; keep this output
+        if state.tasks:
+            parts.append(messages.tasks_after_compaction(state.tasks, ctx.now))
     elif source in ("resume", "fork") and state.note is not None:
-        parts.append(messages.handoff(state.note, after_compaction=False))
+        parts.append(_handoff(state.note, after_compaction=False))
     if state.hold is not None:
         parts.append(messages.hold_active(state.hold, ctx.now))
     parts.append(messages.CLI_REMINDER)
     return with_context("SessionStart", "\n\n".join(parts))
+
+
+def _handoff(note: Note, after_compaction: bool) -> str:
+    tail = read_file_tail(note.file) if note.file is not None else None
+    return messages.handoff(note, after_compaction, tail)
+

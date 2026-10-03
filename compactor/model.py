@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional, Type, TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 _T = TypeVar("_T")
 
@@ -29,6 +29,7 @@ class Hold:
 class Note:
     text: str
     updated_at: str
+    file: Optional[str] = None  # absolute path whose tail is re-injected with the note
 
 
 @dataclass
@@ -44,6 +45,17 @@ class CeilingOverride:
     pct: Optional[float]
     reason: str
     growth_pct: Optional[float] = None  # set when expected next-turn growth triggered it early
+
+
+@dataclass
+class BackgroundTask:
+    """A background Bash command the main agent started, so its ID survives compaction."""
+    task_id: str
+    description: str
+    started: str
+
+
+MAX_TASKS = 50
 
 
 def _require(ok: bool) -> None:
@@ -69,6 +81,7 @@ class State:
     stop_blocked_this_turn: bool = False
     ceiling_override: Optional[CeilingOverride] = None
     window: Optional[int] = None  # window size from `status --line`, or 1M from a `[1m]` SessionStart model
+    tasks: List[BackgroundTask] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         data = asdict(self)
@@ -84,7 +97,7 @@ class State:
             from_iso(hold.since)
         note = _build(Note, data["note"]) if data.get("note") else None
         if note is not None:
-            _require(isinstance(note.text, str))
+            _require(isinstance(note.text, str) and (note.file is None or isinstance(note.file, str)))
             from_iso(note.updated_at)
         override = _build(CeilingOverride, data["ceiling_override"]) if data.get("ceiling_override") else None
         if override is not None:
@@ -98,6 +111,12 @@ class State:
         _require(isinstance(nudge.breakpoint_suggested, bool))
         window = data.get("window")
         _require(window is None or (_is_int(window) and window > 0))
+        raw_tasks = data.get("tasks") or []
+        _require(isinstance(raw_tasks, list))
+        tasks = [_build(BackgroundTask, t) for t in raw_tasks[-MAX_TASKS:]]
+        for task in tasks:
+            _require(all(isinstance(v, str) for v in (task.task_id, task.description, task.started)))
+            from_iso(task.started)
         return cls(
             hold=hold,
             note=note,
@@ -105,6 +124,7 @@ class State:
             stop_blocked_this_turn=bool(data.get("stop_blocked_this_turn", False)),
             ceiling_override=override,
             window=window,
+            tasks=tasks,
         )
 
 

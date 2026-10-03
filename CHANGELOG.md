@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 (2026-10-03)
+
+- Fix: subagents and agent-team teammates can no longer take over the main agent's hold or
+  handoff note. They share its session (same session ID and environment), so the CLI can't tell
+  them apart; a new PreToolUse hook on Bash refuses `compactor hold/release/note` when the call
+  carries an `agent_id`. `compactor status` stays allowed.
+- Background Bash tasks survive compaction: compactor records each background command's task
+  ID when it starts and forgets it on TaskStop or when its completion notice appears. Running
+  tasks are listed after compaction and in `compactor status` (text and `--json`).
+- `compactor note --file <path>` / `release --file <path>`: re-inject the last 40 lines (up
+  to 4 KB) of a file, such as a plan ledger, with the note after compaction.
+
 ## 0.1.2 (2026-10-02)
 
 - `compactor status` lists running Agent-tool subagents (foreground/background), as text and in

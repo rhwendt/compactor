@@ -104,9 +104,18 @@ claude plugin update compactor@compactor
 | Command | Effect |
 |---|---|
 | `compactor hold "<why>"` | Blocks auto-compaction until released. A reason is required. |
-| `compactor release [--note "<text>"]` | Allows compaction again, optionally saving a handoff note. |
-| `compactor note "<text>"` / `--clear` | Sets or clears the handoff note. |
-| `compactor status [--json \| --line]` | Shows the hold, the note, running subagents, and context usage. |
+| `compactor release [--note "<text>"] [--file <path>]` | Allows compaction again, optionally saving a handoff note. |
+| `compactor note "<text>" [--file <path>]` / `--clear` | Sets or clears the handoff note. With `--file`, the last 40 lines of that file (up to 4 KB) come back with the note after compaction. |
+| `compactor status [--json \| --line]` | Shows the hold, the note, running subagents, background tasks, and context usage. |
+
+Only the main agent can hold, release or write notes. Subagents and agent-team teammates share
+its session, so a PreToolUse hook refuses their `compactor hold/release/note` calls
+(`compactor status` is allowed).
+
+After a compaction the agent is also reminded of the background Bash commands it started that
+are still running, with their task IDs, so it can still stop them. compactor learns of a task
+when it starts and forgets it when it's stopped or its completion notice appears; monitors
+aren't tracked.
 
 While a hold is set and context is past the threshold, the agent receives nudges that get
 firmer as usage grows. Each one ends with three lines like:

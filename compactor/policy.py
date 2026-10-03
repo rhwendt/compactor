@@ -192,6 +192,19 @@ def is_breakpoint(command: str, succeeded: bool, extra_patterns: Sequence[str]) 
     return None
 
 
+_STATE_COMMAND = re.compile(r"^\s*(?:\S*/)?compactor\s+(hold|release|note)(?:\s|$)")
+
+
+def compactor_state_command(command: str) -> Optional[str]:
+    """The compactor subcommand that changes the hold or note ("hold", "release", "note") if any
+    segment of a shell command runs one in command-word position, else None. `status` is read-only."""
+    for segment in _segments(command):
+        match = _STATE_COMMAND.match(segment)
+        if match:
+            return match.group(1)
+    return None
+
+
 def invokes_compactor(command: str) -> bool:
     """True when some segment of the command runs `compactor` itself, not just names a path."""
     return any(_COMPACTOR.match(segment) for segment in _segments(command or ""))

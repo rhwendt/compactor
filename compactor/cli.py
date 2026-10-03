@@ -12,7 +12,7 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import IO, Any, Dict, List, Mapping, Optional
 
-from . import messages, subagents
+from . import messages, subagents, tasks
 from .config import Settings, load_settings
 from .state import (
     Hold, Note, NudgeState, State, last_error, load, sanitize_session_id, save, state_dir,
@@ -27,8 +27,11 @@ MAX_NOTE_CHARS = 4000
 STDIN_WAIT_S = 1.0
 USAGE = """usage:
   compactor hold "<reason>"            hold auto-compaction during fragile work
-  compactor release [--note "<text>"]  release the hold, optionally leaving a handoff note
-  compactor note "<text>"              set the handoff note (re-injected after compaction)
+  compactor release [--note "<text>"] [--file <path>]
+                                       release the hold, optionally leaving a handoff note
+  compactor note "<text>" [--file <path>]
+                                       set the handoff note (re-injected after compaction);
+                                       --file also re-injects the tail of that file
   compactor note --clear               clear the handoff note
   compactor status [--json | --line]   show the hold, the note, and context usage"""
 
@@ -49,9 +52,11 @@ def _build_parser() -> argparse.ArgumentParser:
     hold.add_argument("reason", nargs="*")
     release = sub.add_parser("release", add_help=False)
     release.add_argument("--note")
+    release.add_argument("--file")
     note = sub.add_parser("note", add_help=False)
     note.add_argument("text", nargs="*")
     note.add_argument("--clear", action="store_true")
+    note.add_argument("--file")
     status = sub.add_parser("status", add_help=False)
     fmt = status.add_mutually_exclusive_group()
     fmt.add_argument("--json", action="store_true")
@@ -120,6 +125,24 @@ def _check_note(text: str) -> str:
     return text
 
 
+def _check_file(path: str) -> str:
+    """An absolute path to an existing regular file (relative paths resolve against the cwd)."""
+    full = os.path.abspath(os.path.expanduser(path))
+    if not os.path.isfile(full):
+        raise CliError(f"--file {path}: no such file. Point it at an existing file, such as your ledger.")
+    return full
+
+
+def _new_note(state: State, text: Optional[str], file: Optional[str], now: datetime) -> Note:
+    """The note after setting text and/or a file; whichever isn't given is kept from the old note."""
+    old = state.note
+    return Note(
+        text=text if text is not None else (old.text if old is not None else ""),
+        updated_at=to_iso(now),
+        file=file if file is not None else (old.file if old is not None else None),
+    )
+
+
 def _hold(args: argparse.Namespace, session_id: str, settings: Settings,
           env: Mapping[str, str], now: datetime) -> str:
     reason = " ".join(args.reason).strip()
@@ -137,32 +160,34 @@ def _hold(args: argparse.Namespace, session_id: str, settings: Settings,
 def _release(args: argparse.Namespace, session_id: str, settings: Settings,
              env: Mapping[str, str], now: datetime) -> str:
     note_text = _check_note(args.note) if args.note is not None else None
+    note_file = _check_file(args.file) if args.file is not None else None
     state = load(session_id, env)
     had_hold = state.hold is not None
     state.hold = None
     state.nudge = NudgeState()
-    if note_text is not None:
-        state.note = Note(text=note_text, updated_at=to_iso(now))
+    noted = note_text is not None or note_file is not None
+    if noted:
+        state.note = _new_note(state, note_text, note_file, now)
     save(session_id, state, env)
     usage = _usage(session_id, state, settings, env)
-    return messages.released(had_hold, note_text is not None, usage, settings)
+    return messages.released(had_hold, noted, usage, settings)
 
 
 def _note(args: argparse.Namespace, session_id: str, settings: Settings,
           env: Mapping[str, str], now: datetime) -> str:
     text = " ".join(args.text)
-    if args.clear and text.strip():
-        raise CliError("use either note text or --clear, not both")
-    if not args.clear:
-        text = _check_note(text)
+    if args.clear and (text.strip() or args.file is not None):
+        raise CliError("use either note text / --file or --clear, not both")
+    note_file = _check_file(args.file) if args.file is not None else None
+    note_text = _check_note(text) if not args.clear and (text.strip() or note_file is None) else None
     state = load(session_id, env)
     if args.clear:
         state.note = None
         save(session_id, state, env)
         return messages.NOTE_CLEARED
-    state.note = Note(text=text, updated_at=to_iso(now))
+    state.note = _new_note(state, note_text, note_file, now)
     save(session_id, state, env)
-    return messages.note_set(len(text))
+    return messages.note_set(len(state.note.text), state.note.file)
 
 
 def _running_subagents(session_id: str, settings: Settings, env: Mapping[str, str],
@@ -179,6 +204,11 @@ def _running_subagents(session_id: str, settings: Settings, env: Mapping[str, st
 def _status(args: argparse.Namespace, session_id: str, settings: Settings,
             env: Mapping[str, str], now: datetime) -> str:
     state = load(session_id, env)
+    if state.tasks and tasks.prune(state, find_transcript(session_id, env)):
+        try:
+            save(session_id, state, env)
+        except OSError:
+            pass  # status still shows the pruned list; the next prune retries the save
     usage = _usage(session_id, state, settings, env)
     active = _running_subagents(session_id, settings, env, now)
     if not args.json:
@@ -200,6 +230,7 @@ def _status(args: argparse.Namespace, session_id: str, settings: Settings,
             {"agent_id": sub.agent_id, "foreground": sub.foreground,
              "used": sub.usage.used if sub.usage is not None else None}
             for sub in active],
+        "tasks": [asdict(t) for t in state.tasks],
         "warnings": list(settings.warnings),
         "last_error": last_error(env),
     }

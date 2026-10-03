@@ -7,7 +7,7 @@ import unittest
 
 from compactor.state import (
     ERROR_LOG_LINES, CeilingOverride, Hold, Note, NudgeState, State, append_error, last_error,
-    load, sanitize_session_id, save, state_dir, state_path,
+    load, read_file_tail, sanitize_session_id, save, state_dir, state_path,
 )
 from tests.helpers import NOW, SESSION, TempEnvTestCase, iso_minutes_ago
 
@@ -122,6 +122,29 @@ class ErrorLogTest(TempEnvTestCase):
         self.assertEqual(len(lines), ERROR_LOG_LINES)
         self.assertTrue(lines[-1].endswith(f"e{ERROR_LOG_LINES + 49}"))
 
+
+
+class FileTailTest(TempEnvTestCase):
+    def test_last_lines_capped_by_chars(self):
+        path = self.tmp / "f.md"
+        path.write_text("".join(f"l{i}\n" for i in range(100)), encoding="utf-8")
+        self.assertEqual(read_file_tail(str(path), max_lines=3), "l97\nl98\nl99")
+        path.write_bytes(b"one\r\ntwo\r\n")  # Windows line endings
+        self.assertEqual(read_file_tail(str(path)), "one\ntwo")
+        path.write_text("a" * 10_000, encoding="utf-8")
+        self.assertEqual(len(read_file_tail(str(path), max_chars=100)), 100)
+
+    def test_missing_or_directory_is_none(self):
+        self.assertIsNone(read_file_tail(str(self.tmp / "nope")))
+        self.assertIsNone(read_file_tail(str(self.tmp)))
+
+    def test_note_file_round_trips_and_bad_types_read_as_default(self):
+        state = State(note=Note("t", "2026-10-03T00:00:00Z", file="/x/progress.md"))
+        self.assertEqual(State.from_dict(state.to_dict()), state)
+        bad = state.to_dict()
+        bad["note"]["file"] = 5
+        with self.assertRaises(ValueError):
+            State.from_dict(bad)
 
 if __name__ == "__main__":
     unittest.main()

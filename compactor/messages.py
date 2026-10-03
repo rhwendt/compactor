@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import List, Optional, Sequence
 
 from .config import THRESHOLD_VAR, Settings
-from .model import ActiveSubagent, CeilingOverride, Hold, Note, State, Usage, from_iso
+from .model import ActiveSubagent, BackgroundTask, CeilingOverride, Hold, Note, State, Usage, from_iso
 
 CLI_REMINDER = (
     "compactor: you control auto-compaction in this session. Before fragile multi-step work run "
@@ -13,6 +13,12 @@ CLI_REMINDER = (
     'Also: `compactor note "<text>"`, `compactor status`.'
 )
 NOTE_CLEARED = "Handoff note cleared."
+TEAMMATE_DENIED = (
+    "compactor: only the main agent can run `compactor {command}`. You are running as a subagent "
+    "or teammate: you share the main agent's session, and its hold and handoff note belong to it. "
+    "Don't hold, release or write notes; finish your task and report back. "
+    "(`compactor status` is fine.)"
+)
 # Leads SessionStart's injection while a subagent runs: the compaction may have been a
 # background subagent's, and the main agent's note and hold then land in its context.
 SUBAGENT_IGNORE = ("If you are a subagent: this is the main agent's note and hold — ignore them "
@@ -166,13 +172,22 @@ def stop_block(hold: Hold, usage: Optional[Usage], settings: Settings, now: date
     )
 
 
-def handoff(note: Note, after_compaction: bool) -> str:
+def handoff(note: Note, after_compaction: bool, file_tail: Optional[str] = None) -> str:
+    """`file_tail` is the tail of note.file, or None when it can't be read."""
     header = ("Handoff note you left before compaction" if after_compaction
               else "Handoff note from earlier in this session")
-    return (
-        f"compactor — {header} (written {note.updated_at}):\n{note.text}\n"
-        '(Replace it with `compactor note "<text>"` or clear it with `compactor note --clear`.)'
-    )
+    parts = [f"compactor — {header} (written {note.updated_at}):"]
+    if note.text:
+        parts.append(note.text)
+    if note.file is not None:
+        if file_tail is None:
+            parts.append(f"(The note's file, {note.file}, can't be read.)")
+        else:
+            count = len(file_tail.split("\n"))
+            parts.append(f"--- last {count} lines of {note.file} ---\n{file_tail}\n--- end of {note.file} ---")
+    parts.append('(Replace it with `compactor note "<text>" [--file <path>]` or clear it with '
+                 "`compactor note --clear`.)")
+    return "\n".join(parts)
 
 
 def ceiling_notice(override: CeilingOverride) -> str:
@@ -218,8 +233,9 @@ def released(had_hold: bool, noted: bool, usage: Optional[Usage], settings: Sett
     return f"{text}\n{context_line(usage, settings)}"
 
 
-def note_set(chars: int) -> str:
-    return (f"Handoff note saved ({chars} chars). It is re-injected after every compaction "
+def note_set(chars: int, file: Optional[str] = None) -> str:
+    what = f"{chars} chars" + (f", plus the tail of {file}" if file else "")
+    return (f"Handoff note saved ({what}). It is re-injected after every compaction "
             "until you replace or clear it.")
 
 
@@ -230,6 +246,24 @@ def subagents_line(active: Sequence[ActiveSubagent]) -> str:
     foreground = sum(1 for sub in active if sub.foreground)
     return (f"subagents: {len(active)} running ({foreground} foreground, "
             f"{len(active) - foreground} background) {scope}")
+
+
+def _task_items(tasks: Sequence[BackgroundTask], now: datetime) -> List[str]:
+    return [f"  - {t.task_id} ({fmt_age(t.started, now)}): {t.description or '(no description)'}"
+            for t in tasks]
+
+
+def tasks_status(tasks: Sequence[BackgroundTask], now: datetime) -> str:
+    if not tasks:
+        return "background tasks: none running (tracks background Bash commands you start)"
+    return "\n".join([f"background tasks: {len(tasks)} running"] + _task_items(tasks, now))
+
+
+def tasks_after_compaction(tasks: Sequence[BackgroundTask], now: datetime) -> str:
+    return "\n".join(
+        ["compactor — background tasks you started that are still running "
+         "(stop one with TaskStop and its ID; a later completion notice refers to the same ID):"]
+        + _task_items(tasks, now))
 
 
 def status_text(state: State, usage: Optional[Usage], settings: Settings, now: datetime,
@@ -249,11 +283,16 @@ def status_text(state: State, usage: Optional[Usage], settings: Settings, now: d
         lines.append("hold: none")
     if state.note is not None:
         preview = state.note.text.replace("\n", " ")
-        lines.append(f"note: {preview[:77] + '...' if len(preview) > 80 else preview}")
+        preview = preview[:77] + "..." if len(preview) > 80 else preview
+        if state.note.file is not None:
+            preview = f"{preview} (+ tail of {state.note.file})".lstrip()
+        lines.append(f"note: {preview}")
     else:
         lines.append("note: none")
     if subagents is not None:
         lines.append(subagents_line(subagents))
+    if settings.active:
+        lines.append(tasks_status(state.tasks, now))
     lines.append(context_line(usage, settings, holding=state.hold is not None))
     lines.extend(f"config warning: {warning}" for warning in settings.warnings)
     if last_err:

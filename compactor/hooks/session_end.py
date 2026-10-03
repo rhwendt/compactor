@@ -9,9 +9,10 @@ from ._common import HookContext, HookResult
 def handle(ctx: HookContext) -> HookResult:
     subagents.clear(ctx.session_id, ctx.env)
     state = ctx.load_state()
-    if state.hold is None and not state.stop_blocked_this_turn:
+    if state.hold is None and not state.stop_blocked_this_turn and not state.tasks:
         return HookResult()
     state.hold = None
+    state.tasks = []  # background tasks end with the session
     state.nudge = NudgeState()
     state.stop_blocked_this_turn = False
     ctx.save_state(state)
