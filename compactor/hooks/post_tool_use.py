@@ -1,11 +1,12 @@
-"""PostToolUse (all tools): nudges during autonomous work; Bash breakpoint suggestions. Spec §5.2, §5.4."""
+"""PostToolUse (all tools): nudges during autonomous work; Bash breakpoint suggestions; background
+task tracking. Spec §5.2, §5.4."""
 from __future__ import annotations
 
 import copy
 import re
 from typing import Any, Dict, List
 
-from .. import messages, subagents
+from .. import messages, subagents, tasks
 from ..policy import invokes_compactor, is_breakpoint, should_suggest_breakpoint
 from ._common import HookContext, HookResult, apply_nudge, with_context
 
@@ -30,6 +31,8 @@ def bash_succeeded(payload: Dict[str, Any]) -> bool:
 def handle(ctx: HookContext) -> HookResult:
     subagents.demote_all(ctx.session_id, ctx.env)  # the main agent is acting, so not waiting on one
     state = ctx.load_state()
+    if tasks.record(state, ctx.payload, ctx.now):
+        ctx.save_state(state)
     if state.hold is None:
         return HookResult()
     is_bash = ctx.payload.get("tool_name") == "Bash"

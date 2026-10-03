@@ -104,9 +104,10 @@ it from its own real path, since `CLAUDE_PLUGIN_ROOT` is not set in Bash.
 | PreCompact | `auto` | The gate (§5.1). Manual `/compact` is never gated. |
 | Stop | none | Forgotten-hold check (§5.3). Subagent markers are left alone: they end at SubagentStop, idle expiry, or an error answer to their Agent call |
 | UserPromptSubmit | none | Nudge at the start of a turn (§5.2); demotes running subagents to background (the main agent is acting, so not waiting) |
-| PostToolUse | all tools (no matcher) | Main agent: nudges during autonomous work (§5.2), breakpoint detection on Bash only (§5.4), and demoting running subagents to background. Subagent (`agent_id`): only refreshes that subagent's marker |
-| SessionStart | `startup\|resume\|compact\|clear\|fork` | CLI reminder; handoff note after `compact`, `resume` or `fork`; ceiling-override notice |
-| SessionEnd | none | Clear the hold and the subagent markers |
+| PreToolUse | `Bash` | Subagent or teammate (`agent_id`): deny `compactor hold/release/note` (`status` is allowed). They share the main agent's session ID and environment, so only the hook can tell them apart (verified for in-process teammates, Claude Code 2.1.287). Main agent: nothing |
+| PostToolUse | all tools (no matcher) | Main agent: nudges during autonomous work (§5.2), breakpoint detection on Bash only (§5.4), demoting running subagents to background, and tracking background Bash tasks (`tool_response.backgroundTaskId` starts one, TaskStop's `task_id` ends one). Subagent (`agent_id`): only refreshes that subagent's marker |
+| SessionStart | `startup\|resume\|compact\|clear\|fork` | CLI reminder; handoff note after `compact`, `resume` or `fork`, with the last 40 lines (≤ 4 KB) of the note's `--file` if set; after `compact`, the background tasks still running (finished ones are dropped when a `<task-notification>` for their ID is in the transcript); ceiling-override notice |
+| SessionEnd | none | Clear the hold, the background tasks and the subagent markers |
 | SubagentStart | none | Record a real subagent (non-empty `agent_type`) as running (§5.1) |
 | SubagentStop | none | Forget it. Claude Code also fires SubagentStop, with an empty `agent_type`, for the throwaway agent that writes every compaction summary; those are ignored |
 
@@ -114,7 +115,8 @@ Every hook exits immediately (allow, no output) when any of these is true:
 
 - `COMPACTOR_DISABLE` is set.
 - The input contains `agent_id` (a subagent), except for SubagentStart, SubagentStop and
-  PostToolUse, which then only track the subagent (start, stop, and liveness).
+  PostToolUse, which then only track the subagent (start, stop, and liveness), and PreToolUse,
+  which then guards the hold and note.
 - `CLAUDE_CODE_AUTO_COMPACT_WINDOW` is unset. In that case the plugin is inactive, except
   that SessionStart still tells the agent the plugin is off, once.
 

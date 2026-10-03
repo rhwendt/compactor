@@ -127,6 +127,22 @@ class SessionStartTest(HookTestCase):
         self.assertIn("before compaction", text)
         self.assertIn("next: fix client.py:88", text)
 
+    def test_compact_reinjects_the_tail_of_a_note_file(self):
+        ledger = self.tmp / "progress.md"
+        ledger.write_text("".join(f"line {i}\n" for i in range(100)), encoding="utf-8")
+        save(SESSION, State(note=Note("see ledger", iso_minutes_ago(3), file=str(ledger))), self.env)
+        text = self.context_of(self.run_hook("session_start", {"source": "compact"})[1])
+        self.assertIn("see ledger", text)
+        self.assertIn(f"last 40 lines of {ledger}", text)
+        self.assertIn("line 99", text)
+        self.assertNotIn("line 59\n", text)
+
+    def test_missing_note_file_is_reported_not_fatal(self):
+        save(SESSION, State(note=Note("n", iso_minutes_ago(3), file=str(self.tmp / "gone.md"))), self.env)
+        text = self.context_of(self.run_hook("session_start", {"source": "compact"})[1])
+        self.assertIn("gone.md", text)
+        self.assertIn("can't be read", text)
+
     def test_compact_reports_and_clears_ceiling_override(self):
         save(SESSION, State(ceiling_override=CeilingOverride(iso_minutes_ago(0), 90.4, "refactor")), self.env)
         _, out, _ = self.run_hook("session_start", {"source": "compact"})

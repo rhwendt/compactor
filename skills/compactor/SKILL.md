@@ -16,7 +16,8 @@ compaction yourself. Releasing lets the next automatic check go through.
 | `compactor hold "<why>"` | Before fragile work. The reason is required, so be specific. |
 | `compactor release --note "<what matters>"` | At a natural breakpoint. The note comes back after compaction. |
 | `compactor note "<text>"` / `compactor note --clear` | Update or clear the handoff note without releasing. |
-| `compactor status` | Show the hold, the note, and context usage. |
+| `--file <path>` on `note` or `release` | Also re-inject the last 40 lines of that file (such as your ledger) after compaction. |
+| `compactor status` | Show the hold, the note, running subagents, background tasks, and context usage. |
 
 ## When to hold
 
@@ -42,14 +43,20 @@ Before releasing, write down anything that isn't on disk yet and that you'd need
 compaction: the current hypothesis, the next steps, the file:line references in play, and
 decisions made. End the note with the first thing to do after compaction, such as "read the
 tail of docs/ledger.md", so you resume from that rather than by exploring. Prefer
-`compactor release --note "..."` so the note and the release happen together. A note persists across compactions until you replace or clear it, so clear stale
-notes with `compactor note --clear`.
+`compactor release --note "..."` so the note and the release happen together. A note persists
+across compactions until you replace or clear it, so clear stale notes with
+`compactor note --clear`.
+
+If your real recovery state lives in a file, such as a plan ledger, point the note at it with
+`--file <path>`: the note then keeps a short pointer and the file's tail comes back with it.
+Background Bash commands you started are listed after compaction with their IDs, so you can
+still stop them with TaskStop; you don't need to copy the IDs into the note.
 
 ## Subagents
 
-- Before releasing, check `compactor status`: its `subagents:` line shows any running
-  Agent-tool subagents. It can't see background shell commands or monitors, so check your
-  own task list for those.
+- Before releasing, check `compactor status`: its `subagents:` line shows running Agent-tool
+  subagents and its `background tasks:` lines show background Bash commands you started.
+  Monitors aren't tracked, so check your own task list for those.
 - Before dispatching a subagent whose report you must act on, hold:
   `compactor hold "waiting on <task> report"`. Keep holding after the report arrives until you
   have analysed it and done the work it calls for (edits, tests, a handoff note), then release.
@@ -57,8 +64,9 @@ notes with `compactor note --clear`.
 - When you dispatch a long subagent task, tell it to write findings to a file as it goes and to
   report that file's path. Its compactions are held until it reaches its own safety ceiling,
   but they can still happen there, and its report is only as good as what survives.
-- Only the main agent runs `compactor`. If you are a subagent, you must not hold or release
-  (you share the main agent's session); ignore any compactor note or hold notice you receive.
+- Only the main agent runs `compactor hold`, `release` and `note`. Subagents and teammates
+  share the main agent's session, so their attempts are refused by a hook. If you are one,
+  don't try; ignore any compactor note or hold notice you receive (`compactor status` is fine).
 - You don't need to watch the model's hard limit yourself: the safety ceiling shown in the
   context lines overrides the hold near the limit.
 

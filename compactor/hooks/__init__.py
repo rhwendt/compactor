@@ -11,8 +11,8 @@ from typing import IO, Callable, Dict, Mapping, Optional
 from ..config import load_settings
 from ..state import append_error, utcnow
 from . import (
-    post_tool_use, precompact, session_end, session_start, stop, subagent_activity, subagent_start,
-    subagent_stop, user_prompt_submit,
+    post_tool_use, pre_tool_use, precompact, session_end, session_start, stop, subagent_activity,
+    subagent_start, subagent_stop, user_prompt_submit,
 )
 from ._common import HookContext, HookResult
 
@@ -21,6 +21,7 @@ HANDLERS: Dict[str, Callable[[HookContext], HookResult]] = {
     "session_start": session_start.handle,
     "session_end": session_end.handle,
     "user_prompt_submit": user_prompt_submit.handle,
+    "pre_tool_use": pre_tool_use.handle,
     "post_tool_use": post_tool_use.handle,
     "stop": stop.handle,
     "subagent_start": subagent_start.handle,
@@ -32,6 +33,7 @@ HANDLERS: Dict[str, Callable[[HookContext], HookResult]] = {
 AGENT_HANDLERS: Dict[str, Callable[[HookContext], HookResult]] = {
     "subagent_start": subagent_start.handle,
     "subagent_stop": subagent_stop.handle,
+    "pre_tool_use": pre_tool_use.handle_agent,
     "post_tool_use": subagent_activity.handle,
 }
 

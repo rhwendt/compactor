@@ -583,3 +583,38 @@ running, so the large results in flight weren't counted.
 Usage now counts content added since the last reply (characters ÷ 3). The gate allows
 compaction when `used + growth` reaches the ceiling, where growth is the larger of that pending
 content and the last turn's increase.
+
+## Teammates and background tasks (2026-10-03)
+
+Captured with Claude Code 2.1.287 and 2.1.288, with agent teams enabled
+(`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`).
+
+**Teammates share the session.** In port49, an agent-team teammate (`taskKind:
+"in_process_teammate"`, spawned with the Agent tool and a `name`) ran `compactor hold` five
+times and `compactor release --note` once, replacing the main agent's hold and note.
+
+A capture plugin in an interactive tmux session showed how to tell them apart:
+- **Hook payloads differ.** The teammate's PreToolUse(Bash) payloads carry
+  `agent_id: "aprobe-8d2da64117f22179"` and `agent_type: "probe"`. The main agent's carry
+  neither.
+- **The environment doesn't.** `env | grep claude` was identical for the two, so the CLI itself
+  can't tell who called it.
+- **Headless mode is different.** In `claude -p`, the same Agent call ran as an ordinary
+  background subagent, without `taskKind`. Its tool hooks also carried `agent_id`.
+
+**Guard confirmed live** (interactive, this branch loaded as the plugin). The main agent held
+with "main agent reason", then a teammate tried `compactor hold`, `compactor note` and
+`compactor status`.
+- The first two were refused with the PreToolUse deny message, shown to the teammate as a
+  "PreToolUse:Bash hook error".
+- `status` ran.
+- The state file still held "main agent reason", with no note.
+
+**Background tasks.**
+- *Start:* a background Bash call's PostToolUse `tool_response` carries `backgroundTaskId`
+  (e.g. `b9zxz36m5`). `tool_input` carries its `description` and `command`.
+- *Stop:* TaskStop's response carries `task_id` and `task_type: "local_bash"`.
+- *Completion:* a user entry, plus a `queue-operation` with the same content, carrying
+  `<task-notification><task-id>…</task-id>…<status>completed</status>`.
+- *Live check:* `compactor status` listed both of two background jobs. After the short one's
+  notice, only the long one remained. After TaskStop, `--json` showed `"tasks": []`.

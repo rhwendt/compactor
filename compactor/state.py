@@ -17,6 +17,8 @@ from .model import (  # noqa: F401
 
 PRUNE_AGE_S = 7 * 24 * 3600
 ERROR_LOG_LINES = 200
+NOTE_FILE_LINES = 40  # how much of a note's file comes back after compaction
+NOTE_FILE_CHARS = 4000
 
 
 def utcnow() -> datetime:
@@ -102,3 +104,18 @@ def last_error(env: Optional[Mapping[str, str]] = None) -> Optional[str]:
     except OSError:
         return None
     return lines[-1] if lines else None
+
+
+def read_file_tail(path: str, max_lines: int = NOTE_FILE_LINES, max_chars: int = NOTE_FILE_CHARS) -> Optional[str]:
+    """The last max_lines lines of a text file, at most max_chars, or None if it can't be read."""
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(max(0, size - max_chars * 4))  # enough bytes for max_chars of UTF-8
+            data = f.read().decode("utf-8", errors="replace")
+    except OSError:
+        return None
+    lines = data.rstrip("\n").split("\n")[-max_lines:]
+    return "\n".join(lines)[-max_chars:]
+

@@ -127,6 +127,50 @@ class NoteTest(CliTestCase):
                 self.assertEqual(code, 2)
 
 
+class NoteFileTest(CliTestCase):
+    def setUp(self):
+        super().setUp()
+        self.ledger = self.tmp / "progress.md"
+        self.ledger.write_text("# ledger\nTask 11: complete\n", encoding="utf-8")
+
+    def test_note_file_keeps_text_and_stores_an_absolute_path(self):
+        self.run_cli("note", "resume at task 12")
+        cwd = os.getcwd()
+        os.chdir(self.tmp)
+        self.addCleanup(os.chdir, cwd)
+        code, out, _ = self.run_cli("note", "--file", "progress.md")
+        self.assertEqual(code, 0)
+        note = load(SESSION, self.env).note
+        self.assertEqual((note.text, note.file), ("resume at task 12", str(self.ledger)))
+        self.assertIn("progress.md", out)
+
+    def test_note_text_and_file_together_and_release_with_file(self):
+        self.run_cli("note", "x", "--file", str(self.ledger))
+        self.assertEqual(load(SESSION, self.env).note.file, str(self.ledger))
+        save(SESSION, State(hold=Hold("h", iso_minutes_ago(1))), self.env)
+        code, out, _ = self.run_cli("release", "--file", str(self.ledger))
+        self.assertEqual(code, 0)
+        state = load(SESSION, self.env)
+        self.assertIsNone(state.hold)
+        self.assertEqual((state.note.text, state.note.file), ("", str(self.ledger)))
+
+    def test_clear_removes_the_file_too(self):
+        self.run_cli("note", "x", "--file", str(self.ledger))
+        self.run_cli("note", "--clear")
+        self.assertIsNone(load(SESSION, self.env).note)
+
+    def test_errors(self):
+        for argv in (["note", "--file", str(self.tmp / "missing.md")],
+                     ["note", "--clear", "--file", str(self.ledger)],
+                     ["note", "--file", str(self.tmp)]):
+            with self.subTest(argv=argv):
+                self.assertEqual(self.run_cli(*argv)[0], 2)
+
+    def test_status_shows_the_file(self):
+        self.run_cli("note", "x", "--file", str(self.ledger))
+        self.assertIn(f"+ tail of {self.ledger}", self.run_cli("status")[1])
+
+
 class StatusTest(CliTestCase):
     def setUp(self):
         super().setUp()
@@ -152,6 +196,17 @@ class StatusTest(CliTestCase):
         self.assertIn("subagents: 1 running (0 foreground, 1 background)", self.run_cli("status")[1])
         data = json.loads(self.run_cli("status", "--json")[1])
         self.assertEqual(data["subagents"], [{"agent_id": "a1", "foreground": False, "used": None}])
+
+    def test_text_and_json_list_background_tasks(self):
+        from compactor.model import BackgroundTask
+        state = load(SESSION, self.env)
+        state.tasks = [BackgroundTask("bbkwem7r3", "watchdog", iso_minutes_ago(12))]
+        save(SESSION, state, self.env)
+        self.assertIn("background tasks: 1 running", self.run_cli("status")[1])
+        self.assertIn("bbkwem7r3 (12m): watchdog", self.run_cli("status")[1])
+        data = json.loads(self.run_cli("status", "--json")[1])
+        self.assertEqual(data["tasks"], [{"task_id": "bbkwem7r3", "description": "watchdog",
+                                          "started": iso_minutes_ago(12)}])
 
     def test_line_uses_statusline_stdin_and_caches_window(self):
         env = dict(self.env)
