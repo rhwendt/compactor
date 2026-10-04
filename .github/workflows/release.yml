@@ -32,11 +32,12 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Auto-merge the release PR once CI passes
-        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        if: ${{ steps.release.outputs.pr != '' }}
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-          PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr).number }}
+          PR_JSON: ${{ steps.release.outputs.pr }}  # parsed below: fromJSON fails on an empty output
         run: |
+          PR_NUMBER=$(jq -r '.number' <<<"$PR_JSON")
           if [ -z "$GH_TOKEN" ]; then
             echo "::notice::RELEASE_PLEASE_TOKEN isn't set; merge release PR #$PR_NUMBER by hand (gh pr merge $PR_NUMBER --merge --admin)."
             exit 0
