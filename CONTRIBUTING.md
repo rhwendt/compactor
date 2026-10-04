@@ -43,3 +43,12 @@ depends on Claude Code behavior, check the verification notes, or add to them.
   example `fix: ...`, `feat: ...` or `docs: ...`.
 - Keep pull requests focused, and describe how you verified the change.
 - CI must pass on Linux, macOS and Windows before merging.
+
+## Releases
+
+Releases are automated with [release-please](https://github.com/googleapis/release-please).
+Commit types decide the next version: `fix:` gives a patch release and `feat:` a minor one
+(while below 1.0). The commit subjects become the changelog, so write them for users.
+
+Don't change version numbers or add changelog entries in a pull request; the release PR does
+that. Merging the release PR tags the version and publishes the GitHub release.

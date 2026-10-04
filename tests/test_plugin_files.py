@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import unittest
 
 from compactor import __version__
@@ -17,6 +18,19 @@ class PluginFilesTest(unittest.TestCase):
         market = json.loads((REPO_ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
         (plugin,) = market["plugins"]
         self.assertEqual((plugin["name"], plugin["source"], plugin["version"]), ("compactor", "./", __version__))
+
+    def test_release_files_agree_with_the_release_manifest(self):
+        # release-please bumps exactly these files; a version anywhere else would drift.
+        manifest = json.loads((REPO_ROOT / ".release-please-manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["."], __version__)
+        self.assertEqual((REPO_ROOT / "version.txt").read_text(encoding="utf-8").strip(), __version__)
+        config = json.loads((REPO_ROOT / "release-please-config.json").read_text(encoding="utf-8"))
+        for extra in config["packages"]["."]["extra-files"]:
+            text = (REPO_ROOT / extra["path"]).read_text(encoding="utf-8")
+            if extra["type"] == "generic":
+                self.assertRegex(text, re.escape(__version__) + r'"?\s+# x-release-please-version', extra["path"])
+            else:
+                self.assertIn(f'"version": "{__version__}"', text, extra["path"])
 
     def test_skill_frontmatter_and_commands(self):
         text = (REPO_ROOT / "skills" / "compactor" / "SKILL.md").read_text(encoding="utf-8")
