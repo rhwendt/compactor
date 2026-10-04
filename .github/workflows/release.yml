@@ -2,10 +2,18 @@ name: release
 
 # On every push to main, release-please keeps a release PR up to date: it reads the
 # Conventional Commits since the last tag, picks the next version, bumps every version file,
-# and writes the changelog entry. Merging that PR tags the release and publishes it.
+# and writes the changelog entry. The release PR is set to auto-merge once CI passes; that
+# merge pushes to main, and the next run tags the release and publishes it.
+#
+# This needs the RELEASE_PLEASE_TOKEN secret: a fine-grained PAT for this repo with Contents
+# and Pull requests read/write. Events caused by the default GITHUB_TOKEN don't trigger
+# workflows, so without the PAT, CI wouldn't run on the release PR and its merge wouldn't
+# start the release run. Without the secret, the release PR has to be merged by hand with
+# `gh pr merge <n> --merge --admin`.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,9 +24,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: googleapis/release-please-action@v5
+      - id: release
+        uses: googleapis/release-please-action@v5
         with:
-          # A PAT lets CI run on the release PR; with the default token, merge it with --admin.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Auto-merge the release PR once CI passes
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr).number }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::RELEASE_PLEASE_TOKEN isn't set; merge release PR #$PR_NUMBER by hand (gh pr merge $PR_NUMBER --merge --admin)."
+            exit 0
+          fi
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --merge

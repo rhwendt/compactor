@@ -33,10 +33,13 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
   `tests/test_plugin_files.py` fails if these files disagree.
 - **Bump the version for every user-facing fix.** Claude Code caches an installed plugin by
   version, so a fix merged without a release never reaches existing installs.
-- **CI doesn't run on release PRs.** release-please opens them with the default
-  `GITHUB_TOKEN`, so the required checks never report, and the PR has to be merged with
-  `gh pr merge <n> --merge --admin`. It only changes version files and the changelog. Adding a
-  `RELEASE_PLEASE_TOKEN` secret (a fine-grained PAT) would let CI run on them.
+- **Releases are fully automated.** release-please opens the release PR with the
+  `RELEASE_PLEASE_TOKEN` secret, a fine-grained PAT for this repo with Contents and Pull
+  requests read/write. Because of that, CI runs on the PR, and the workflow sets it to
+  auto-merge once the checks pass. That merge triggers the release run, which tags and
+  publishes. The PAT expires; when releases stop, renew it with
+  `gh secret set RELEASE_PLEASE_TOKEN`. If the secret is missing, merge the release PR by hand
+  with `gh pr merge <n> --merge --admin`.
 - **The official plugin directory pins a tag.** Anthropic's listing (`claude-plugins-official`)
   points at a git tag and SHA, so it needs a new release before it can show newer code.
 
