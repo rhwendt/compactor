@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/rhwendt/compactor/compare/v0.2.1...v0.2.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* read only compactor's own environment variables ([2b78f03](https://github.com/rhwendt/compactor/commit/2b78f0301728654e0601da96318ae37e749ab98f))
+
 ## [0.2.1](https://github.com/rhwendt/compactor/compare/v0.2.0...v0.2.1) (2026-10-05)
 
 

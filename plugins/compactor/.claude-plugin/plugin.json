@@ -1,7 +1,7 @@
 {
   "name": "compactor",
   "description": "Agent-controlled auto-compaction: hold compaction during fragile work, release it at safe breakpoints, and leave handoff notes that survive it.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "Ryan Wendt"
   },

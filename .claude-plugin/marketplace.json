@@ -8,7 +8,7 @@
     {
       "name": "compactor",
       "description": "Agent-controlled auto-compaction with handoff notes",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "source": "./plugins/compactor",
       "author": {
         "name": "Ryan Wendt"
