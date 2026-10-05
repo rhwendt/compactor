@@ -2,13 +2,12 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import traceback
 from datetime import datetime
 from typing import IO, Callable, Dict, Mapping, Optional
 
-from ..config import load_settings
+from ..config import load_settings, process_env
 from ..state import append_error, utcnow
 from . import (
     post_tool_use, pre_tool_use, precompact, session_end, session_start, stop, subagent_activity,
@@ -47,7 +46,7 @@ def dispatch(event: str, stdin: Optional[IO[str]] = None, out: Optional[IO[str]]
     stdin = sys.stdin if stdin is None else stdin
     out = sys.stdout if out is None else out
     err = sys.stderr if err is None else err
-    env = os.environ if env is None else env
+    env = process_env() if env is None else env
     try:
         if event not in HANDLERS:
             return 0

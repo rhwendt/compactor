@@ -57,6 +57,13 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
 - **The official plugin directory pins a tag.** Anthropic's listing (`claude-plugins-official`)
   points at a git tag and SHA, so it needs a new release before it can show newer code.
 
+## Environment
+
+- compactor reads only the variables listed in `ENV_KEYS` (`compactor/config.py`), through
+  `process_env()`. A new setting must be added there, or it's silently ignored. Never pass
+  `os.environ` around, because a test enforces that: the plugin directory's linter treats
+  "reads the whole environment" as a credential risk.
+
 ## Git and GitHub
 
 - `main` is protected by the "Protect main" ruleset: a PR is required, the 15 `test (...)` CI

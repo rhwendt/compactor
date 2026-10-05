@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Mapping, Optional
 
 # The state types live in model.py (no I/O) and are re-exported here.
+from .config import process_env
 from .model import (  # noqa: F401
     STATE_VERSION, CeilingOverride, Hold, Note, NudgeState, State, from_iso, to_iso,
 )
@@ -26,7 +27,7 @@ def utcnow() -> datetime:
 
 
 def state_dir(env: Optional[Mapping[str, str]] = None) -> Path:
-    env = os.environ if env is None else env
+    env = process_env() if env is None else env
     base = env.get("XDG_STATE_HOME") or os.path.join(os.path.expanduser("~"), ".local", "state")
     return Path(base) / "claude-compactor"
 

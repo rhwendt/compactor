@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Tuple
 
-from .config import Settings
+from .config import Settings, process_env
 from .model import Usage  # defined in the I/O-free model module
 
 USAGE_KEYS = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
@@ -188,7 +188,7 @@ def read_usage(transcript_path: Optional[str], settings: Settings,
 
 
 def claude_config_dir(env: Optional[Mapping[str, str]] = None) -> Path:
-    env = os.environ if env is None else env
+    env = process_env() if env is None else env
     return Path(env.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"))
 
 

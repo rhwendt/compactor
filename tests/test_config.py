@@ -95,3 +95,23 @@ class CeilingTokensTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ProcessEnvTest(unittest.TestCase):
+    def test_only_compactors_own_variables_are_read(self):
+        from unittest import mock
+        from compactor.config import ENV_KEYS, process_env
+        fake = {"CLAUDE_CODE_SESSION_ID": "s", "COMPACTOR_CEILING_PCT": "80", "GH_TOKEN": "secret",
+                "ANTHROPIC_API_KEY": "secret", "PATH": "/bin"}
+        with mock.patch.dict("os.environ", fake, clear=True):
+            self.assertEqual(process_env(), {"CLAUDE_CODE_SESSION_ID": "s", "COMPACTOR_CEILING_PCT": "80"})
+        self.assertTrue(all(k.startswith(("CLAUDE_", "COMPACTOR_", "XDG_")) for k in ENV_KEYS))
+
+    def test_nothing_else_touches_os_environ(self):
+        # The whole environment never passes through compactor; process_env() is the one reader.
+        import re
+        from tests.helpers import PLUGIN_ROOT
+        offenders = [str(p.relative_to(PLUGIN_ROOT)) for p in PLUGIN_ROOT.rglob("*.py")
+                     if re.search(r"os\.environ\b", p.read_text(encoding="utf-8"))
+                     and p.name != "config.py"]
+        self.assertEqual(offenders, [])

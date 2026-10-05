@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import IO, Any, Dict, List, Mapping, Optional
 
 from . import messages, subagents, tasks
-from .config import Settings, load_settings
+from .config import Settings, load_settings, process_env
 from .state import (
     Hold, Note, NudgeState, State, last_error, load, sanitize_session_id, save, state_dir,
     to_iso, utcnow,
@@ -68,7 +68,7 @@ def main(argv: Optional[List[str]] = None, env: Optional[Mapping[str, str]] = No
          stdin: Optional[IO[str]] = None, out: Optional[IO[str]] = None,
          err: Optional[IO[str]] = None, now: Optional[datetime] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    env = os.environ if env is None else env
+    env = process_env() if env is None else env
     stdin = sys.stdin if stdin is None else stdin
     out = sys.stdout if out is None else out
     err = sys.stderr if err is None else err
