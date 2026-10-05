@@ -54,8 +54,16 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
   publishes. The PAT expires; when releases stop, renew it with
   `gh secret set RELEASE_PLEASE_TOKEN`. If the secret is missing, merge the release PR by hand
   with `gh pr merge <n> --rebase --admin`.
-- **The official plugin directory pins a tag.** Anthropic's listing (`claude-plugins-official`)
-  points at a git tag and SHA, so it needs a new release before it can show newer code.
+- **Submitted to Anthropic's plugin directory (2026-10-05) as v0.2.2,** with a push webhook,
+  so pushes to `main`, release merges included, tell the directory about updates. Validation
+  passes with two notices that a human reviewer clears, and both recur on every version:
+  - `MCP_FORWARDS_CREDENTIAL_ENV`: it matches the name `CLAUDE_CODE_SESSION_ID` and reads the
+    ID regex in `subagents.py` as a command.
+  - `COMMAND_SCRIPT_NOT_FOLLOWED`: Python hooks are never followed automatically.
+
+  Don't rewrite code just to quiet them. The reviewer notes say there's no network code, the
+  environment is allow-listed, and the regex is an ID check. The listing icon
+  (`plugins/compactor/.claude-plugin/icon.png`) is now permanent.
 
 ## Environment
 
