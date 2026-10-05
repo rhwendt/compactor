@@ -53,7 +53,7 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
   auto-merge once the checks pass. That merge triggers the release run, which tags and
   publishes. The PAT expires; when releases stop, renew it with
   `gh secret set RELEASE_PLEASE_TOKEN`. If the secret is missing, merge the release PR by hand
-  with `gh pr merge <n> --merge --admin`.
+  with `gh pr merge <n> --rebase --admin`.
 - **The official plugin directory pins a tag.** Anthropic's listing (`claude-plugins-official`)
   points at a git tag and SHA, so it needs a new release before it can show newer code.
 
@@ -61,7 +61,9 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
 
 - `main` is protected by the "Protect main" ruleset: a PR is required, the 15 `test (...)` CI
   jobs must pass, and force-pushes and deletion are blocked. Branch, open a PR, and merge with
-  `--merge`, which keeps the atomic commits that release-please reads.
+  `gh pr merge <n> --rebase`, the only method the repo allows. Each atomic commit lands on
+  `main` as is, which is what release-please reads. A merge commit would repeat the PR title,
+  which made 0.2.1's changelog list its fix twice.
 - The repo is public. Never put Claude session links (`Claude-Session:`,
   `claude.ai/code/session_...`) in commits, PR text or files.
 
