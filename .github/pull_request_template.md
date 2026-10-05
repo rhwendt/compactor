@@ -6,6 +6,6 @@
 
 <!-- Tests added or run, and any live session you tried it in. -->
 
-- [ ] `python3 -m unittest discover -s tests` passes
+- [ ] `python3 -m unittest discover -s tests -t .` passes
 - [ ] Behavior changes have a test
 - [ ] README, spec or CHANGELOG updated if users would notice the change

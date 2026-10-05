@@ -20,9 +20,9 @@
       "package-name": "compactor",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        { "type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "plugins/compactor/.claude-plugin/plugin.json", "jsonpath": "$.version" },
         { "type": "json", "path": ".claude-plugin/marketplace.json", "jsonpath": "$.plugins[0].version" },
-        { "type": "generic", "path": "compactor/__init__.py" },
+        { "type": "generic", "path": "plugins/compactor/compactor/__init__.py" },
         { "type": "generic", "path": ".github/ISSUE_TEMPLATE/bug_report.yml" }
       ]
     }

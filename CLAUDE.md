@@ -3,6 +3,20 @@
 A public Claude Code plugin (Python 3.9+, stdlib only). Read `CONTRIBUTING.md` for the design
 rules and `docs/superpowers/specs/` for the spec and verification notes.
 
+## Layout: only `plugins/compactor/` ships
+
+- `plugins/compactor/` is the plugin: `.claude-plugin/plugin.json` and `icon.png`, `hooks/`,
+  `bin/`, `skills/`, the `compactor/` Python package, and `LICENSE`. Installs copy this folder
+  and nothing else.
+- Everything else (tests, docs, CI, scripts, this file) lives at the repo root, outside the
+  plugin. Keep it there: the plugin directory's linter flags non-runtime files inside a plugin,
+  for example docs that mention `github.com` beside environment reads, or CI files that use
+  `GH_TOKEN`.
+- The marketplace manifest (`.claude-plugin/marketplace.json`) stays at the repo root, with
+  `"source": "./plugins/compactor"`.
+- The icon is permanent once submitted to the directory. `scripts/make_icon.py` regenerates
+  it.
+
 ## Releases are automated: never bump versions by hand
 
 - Releases come from Conventional Commits on `main`, through release-please
@@ -25,8 +39,8 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
 - Never edit version numbers or add changelog entries yourself. release-please owns these
   files:
   - `.release-please-manifest.json`, `version.txt`
-  - `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`
-  - `compactor/__init__.py` and `.github/ISSUE_TEMPLATE/bug_report.yml`, both marked
+  - `plugins/compactor/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`
+  - `plugins/compactor/compactor/__init__.py` and `.github/ISSUE_TEMPLATE/bug_report.yml`, both marked
     `x-release-please-version`
   - new sections of `CHANGELOG.md`
 
@@ -53,6 +67,13 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
 
 ## Verifying
 
-- Run `python3 -m unittest discover -s tests` and `claude plugin validate .` before any PR.
+- To try a checkout, use `claude --plugin-dir plugins/compactor`. Never run
+  `claude plugin marketplace add <local checkout>`: marketplaces are global by name, so that
+  re-points every install of `compactor` at the checkout, including other projects, and
+  removing it again uninstalls them. If it happens anyway, re-add `rhwendt/compactor` and
+  reinstall.
+
+- Run `python3 -m unittest discover -s tests -t .`, `claude plugin validate .` and
+  `claude plugin validate plugins/compactor` before any PR.
 - Claude Code behavior, such as hook payloads, timing or thresholds, is checked live, not
   assumed. Record the evidence in `docs/superpowers/specs/2026-09-29-verification.md`.

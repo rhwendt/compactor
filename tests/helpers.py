@@ -15,6 +15,7 @@ from compactor.subagents import read_markers
 NOW = datetime(2026, 9, 29, 12, 0, 0, tzinfo=timezone.utc)
 SESSION = "sess-123"
 REPO_ROOT = Path(__file__).resolve().parent.parent
+PLUGIN_ROOT = REPO_ROOT / "plugins" / "compactor"  # what an install ships
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 

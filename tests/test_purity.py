@@ -3,13 +3,13 @@ from __future__ import annotations
 import ast
 import unittest
 
-from tests.helpers import REPO_ROOT
+from tests.helpers import PLUGIN_ROOT
 
 PURE_IMPORTS = {"config", "model"}  # modules without file I/O
 
 
 def package_imports(name: str) -> set:
-    tree = ast.parse((REPO_ROOT / "compactor" / f"{name}.py").read_text(encoding="utf-8"))
+    tree = ast.parse((PLUGIN_ROOT / "compactor" / f"{name}.py").read_text(encoding="utf-8"))
     found = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.level == 1:
