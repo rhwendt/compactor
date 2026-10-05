@@ -5,9 +5,24 @@ import math
 import os
 import re
 from dataclasses import dataclass
-from typing import List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 
 THRESHOLD_VAR = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
+# Every environment variable compactor reads. process_env() copies only these, so the rest of
+# the environment (tokens, keys, anything else) never passes through compactor.
+ENV_KEYS = (
+    "CLAUDE_CODE_SESSION_ID",
+    THRESHOLD_VAR,
+    "CLAUDE_CONFIG_DIR",
+    "XDG_STATE_HOME",
+    "COMPACTOR_BREAKPOINT_PATTERNS",
+    "COMPACTOR_CEILING_PCT",
+    "COMPACTOR_CONTEXT_WINDOW",
+    "COMPACTOR_DISABLE",
+    "COMPACTOR_MAX_HOLD_MIN",
+    "COMPACTOR_NUDGE_EVERY",
+    "COMPACTOR_SUBAGENTS",
+)
 DEFAULT_CEILING_PCT = 90.0
 MIN_CEILING_PCT = 50.0
 MAX_CEILING_PCT = 98.0
@@ -15,6 +30,11 @@ DEFAULT_NUDGE_EVERY = 10
 DEFAULT_MAX_HOLD_MIN = 60
 SUBAGENTS_HOLD = "hold"
 SUBAGENTS_ALLOW = "allow"
+
+
+def process_env() -> Dict[str, str]:
+    """The ENV_KEYS that are set in this process's environment, and nothing else."""
+    return {key: os.environ[key] for key in ENV_KEYS if key in os.environ}
 
 
 @dataclass(frozen=True)
@@ -97,7 +117,7 @@ def _subagents(env: Mapping[str, str], warnings: List[str]) -> str:
 
 
 def load_settings(env: Optional[Mapping[str, str]] = None) -> Settings:
-    env = os.environ if env is None else env
+    env = process_env() if env is None else env
     warnings: List[str] = []
     threshold = _positive_int(env, THRESHOLD_VAR, warnings)
     ceiling_pct = _ceiling_pct(env, warnings)
