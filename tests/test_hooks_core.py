@@ -8,7 +8,7 @@ import unittest
 from compactor.hooks import HANDLERS
 from compactor.state import CeilingOverride, Note, State, last_error, save, state_path
 from tests.helpers import (
-    REPO_ROOT, SESSION, assistant_entry, iso_minutes_ago, tool_result_entry, user_entry, write_transcript,
+    PLUGIN_ROOT, SESSION, assistant_entry, iso_minutes_ago, tool_result_entry, user_entry, write_transcript,
 )
 from tests.hook_helpers import HookTestCase, fixture_payload
 
@@ -199,7 +199,7 @@ class SessionEndTest(HookTestCase):
 class LauncherTest(HookTestCase):
     def launch(self, event: str, stdin: str) -> int:
         env = self.subprocess_env()
-        return subprocess.run([sys.executable, str(REPO_ROOT / "hooks" / "run.py"), event], input=stdin,
+        return subprocess.run([sys.executable, str(PLUGIN_ROOT / "hooks" / "run.py"), event], input=stdin,
                               env=env, capture_output=True, text=True, timeout=30).returncode
 
     def test_utf8_payload_is_read_whatever_the_stdio_encoding(self):
@@ -213,7 +213,7 @@ class LauncherTest(HookTestCase):
                 env.pop("PYTHONIOENCODING", None)
                 if encoding:
                     env["PYTHONIOENCODING"] = encoding
-                result = subprocess.run([sys.executable, str(REPO_ROOT / "hooks" / "run.py"), "precompact"],
+                result = subprocess.run([sys.executable, str(PLUGIN_ROOT / "hooks" / "run.py"), "precompact"],
                                         input=body.encode("utf-8"), env=env, capture_output=True, timeout=30)
                 self.assertEqual(result.returncode, 2, result.stderr.decode("utf-8", "replace"))
 
@@ -230,7 +230,7 @@ class LauncherTest(HookTestCase):
 
 class HooksJsonTest(unittest.TestCase):
     def test_commands_match_handlers(self):
-        config = json.loads((REPO_ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+        config = json.loads((PLUGIN_ROOT / "hooks" / "hooks.json").read_text(encoding="utf-8"))
         targets, matchers = set(), {}
         for event_name, groups in config["hooks"].items():
             for group in groups:

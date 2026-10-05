@@ -18,11 +18,12 @@ Everyone taking part is expected to follow the [code of conduct](CODE_OF_CONDUCT
 compactor is Python 3.9+ with the standard library only. Please don't add dependencies.
 
 ```sh
-python3 -m unittest discover -s tests      # the full suite
-claude plugin validate .                    # the plugin manifests
+python3 -m unittest discover -s tests -t .   # the full suite
+claude plugin validate .                    # the marketplace manifest
+claude plugin validate plugins/compactor     # the plugin
 ```
 
-To try your checkout in a real session, run `claude --plugin-dir /path/to/compactor` with
+To try your checkout in a real session, run `claude --plugin-dir plugins/compactor` with
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` set. The README's "Manual smoke test" walks through it.
 
 Design notes live in `docs/superpowers/specs/`: the design spec, and verification notes that

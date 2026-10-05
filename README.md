@@ -218,8 +218,11 @@ ceiling then lands early rather than past a 200k model's real limit.
 
 ```
 python3 -m unittest discover -s tests -t . -v
-claude --plugin-dir .
+claude --plugin-dir plugins/compactor
 ```
+
+The plugin itself, which is all an install ships, lives in `plugins/compactor/`. The repo root
+holds the marketplace manifest, tests, docs and CI.
 
 Design: `docs/superpowers/specs/2026-09-29-compactor-design.md`.
 

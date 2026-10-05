@@ -11,7 +11,7 @@ from unittest import mock
 from compactor import cli, subagents
 from compactor.cli import MAX_NOTE_CHARS, main
 from compactor.state import Hold, Note, NudgeState, State, load, save
-from tests.helpers import NOW, REPO_ROOT, SESSION, TempEnvTestCase, iso_minutes_ago
+from tests.helpers import NOW, PLUGIN_ROOT, SESSION, TempEnvTestCase, iso_minutes_ago
 
 
 class CliTestCase(TempEnvTestCase):
@@ -310,7 +310,7 @@ class ErrorsTest(CliTestCase):
 
 class BinScriptTest(CliTestCase):
     def test_bin_script_runs(self):
-        script = REPO_ROOT / "bin" / "compactor"
+        script = PLUGIN_ROOT / "bin" / "compactor"
         self.assertTrue(os.access(script, os.X_OK), "bin/compactor must be executable")
         env = self.subprocess_env()
         result = subprocess.run([sys.executable, str(script), "hold", "via bin"], env=env,
@@ -319,7 +319,7 @@ class BinScriptTest(CliTestCase):
         self.assertEqual(load(SESSION, self.env).hold.reason, "via bin")
 
     def test_bin_script_handles_utf8_whatever_the_stdio_encoding(self):
-        script = REPO_ROOT / "bin" / "compactor"
+        script = PLUGIN_ROOT / "bin" / "compactor"
         reason = "fix caf\u00e9 parser \U0001f50d"
         for encoding in (None, "cp1252"):
             with self.subTest(PYTHONIOENCODING=encoding):

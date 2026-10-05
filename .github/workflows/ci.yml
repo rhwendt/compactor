@@ -22,4 +22,4 @@ jobs:
       - name: Unit tests
         run: python -m unittest discover -s tests -t . -v
       - name: Manifests parse
-        run: python -c "import json, sys; [json.load(open(p)) for p in sys.argv[1:]]" .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json
+        run: python -c "import json, sys; [json.load(open(p)) for p in sys.argv[1:]]" .claude-plugin/marketplace.json plugins/compactor/.claude-plugin/plugin.json plugins/compactor/hooks/hooks.json
