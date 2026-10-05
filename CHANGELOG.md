@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/rhwendt/compactor/compare/v0.2.0...v0.2.1) (2026-10-05)
+
+
+### Bug Fixes
+
+* ship only the plugin's runtime files, and add a listing icon ([2b5af29](https://github.com/rhwendt/compactor/commit/2b5af2976acba570ef0ac70f657fe00b7a6ea534))
+
 ## 0.2.0 (2026-10-03)
 
 - Fix: subagents and agent-team teammates can no longer take over the main agent's hold or
