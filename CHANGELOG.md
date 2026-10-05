@@ -5,7 +5,6 @@
 
 ### Bug Fixes
 
-* ship only the plugin's runtime files, and add a listing icon ([3c9c331](https://github.com/rhwendt/compactor/commit/3c9c331bdd5248e10652fb977525bcecfa3552f3))
 * ship only the plugin's runtime files, and add a listing icon ([2b5af29](https://github.com/rhwendt/compactor/commit/2b5af2976acba570ef0ac70f657fe00b7a6ea534))
 
 ## 0.2.0 (2026-10-03)
