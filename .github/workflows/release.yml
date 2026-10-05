@@ -9,7 +9,7 @@ name: release
 # and Pull requests read/write. Events caused by the default GITHUB_TOKEN don't trigger
 # workflows, so without the PAT, CI wouldn't run on the release PR and its merge wouldn't
 # start the release run. Without the secret, the release PR has to be merged by hand with
-# `gh pr merge <n> --merge --admin`.
+# `gh pr merge <n> --rebase --admin`.
 on:
   push:
     branches: [main]
