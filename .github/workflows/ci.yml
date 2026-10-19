@@ -13,11 +13,17 @@ concurrency:
 
 jobs:
   test:
+    # One job per code path, not the full OS x version grid. The stdlib-only code needs the
+    # oldest and newest supported Python, both on Linux. Windows is the one OS that takes
+    # different paths (stdin via PeekNamedPipe because select won't take pipes, os.replace
+    # semantics), so it gets one job. macOS takes the same POSIX paths as Linux.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+          - {os: ubuntu-latest, python: "3.9"}
+          - {os: ubuntu-latest, python: "3.13"}
+          - {os: windows-latest, python: "3.13"}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:

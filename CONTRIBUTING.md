@@ -43,7 +43,7 @@ depends on Claude Code behavior, check the verification notes, or add to them.
 - Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages, for
   example `fix: ...`, `feat: ...` or `docs: ...`.
 - Keep pull requests focused, and describe how you verified the change.
-- CI must pass on Linux, macOS and Windows before merging.
+- CI must pass on Linux and Windows before merging.
 
 ## Releases
 

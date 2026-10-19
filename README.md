@@ -24,8 +24,9 @@ Claude Code can't be told to compact early, by hooks or by the model. So compact
 - `python3` (3.9 or newer) on your PATH. It uses the standard library only. On Windows, make
   sure `python3` resolves, for example through the Python launcher or an alias.
 
-The test suite runs in CI on Linux, macOS and Windows (Python 3.9–3.13). Live sessions have
-been checked on Linux only, so reports from macOS and Windows are welcome.
+The test suite runs in CI on Linux (Python 3.9 and 3.13) and Windows (Python 3.13). macOS
+takes the same code paths as Linux and isn't tested separately. Live sessions have been
+checked on Linux only, so reports from macOS and Windows are welcome.
 
 ## Install
 
