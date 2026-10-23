@@ -5,11 +5,10 @@ name: release
 # and writes the changelog entry. The release PR is set to auto-merge once CI passes; that
 # merge pushes to main, and the next run tags the release and publishes it.
 #
-# This needs the RELEASE_PLEASE_TOKEN secret: a fine-grained PAT for this repo with Contents
-# and Pull requests read/write. Events caused by the default GITHUB_TOKEN don't trigger
-# workflows, so without the PAT, CI wouldn't run on the release PR and its merge wouldn't
-# start the release run. Without the secret, the release PR has to be merged by hand with
-# `gh pr merge <n> --rebase --admin`.
+# It acts as the rhwendt-release-bot GitHub App (Contents and Pull requests read/write), from
+# the RELEASE_APP_CLIENT_ID variable and the RELEASE_APP_KEY secret. Events caused by the
+# default GITHUB_TOKEN don't trigger workflows, so with that token CI wouldn't run on the
+# release PR and its merge wouldn't start the release run.
 on:
   push:
     branches: [main]
@@ -24,22 +23,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - id: app
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_KEY }}
+
       - id: release
         uses: googleapis/release-please-action@v5
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ steps.app.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
       - name: Auto-merge the release PR once CI passes
         if: ${{ steps.release.outputs.pr != '' }}
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ steps.app.outputs.token }}
           PR_JSON: ${{ steps.release.outputs.pr }}  # parsed below: fromJSON fails on an empty output
         run: |
           PR_NUMBER=$(jq -r '.number' <<<"$PR_JSON")
-          if [ -z "$GH_TOKEN" ]; then
-            echo "::notice::RELEASE_PLEASE_TOKEN isn't set; merge release PR #$PR_NUMBER by hand (gh pr merge $PR_NUMBER --rebase --admin)."
-            exit 0
-          fi
           gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --rebase
