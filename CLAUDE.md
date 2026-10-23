@@ -47,13 +47,13 @@ rules and `docs/superpowers/specs/` for the spec and verification notes.
   `tests/test_plugin_files.py` fails if these files disagree.
 - **Bump the version for every user-facing fix.** Claude Code caches an installed plugin by
   version, so a fix merged without a release never reaches existing installs.
-- **Releases are fully automated.** release-please opens the release PR with the
-  `RELEASE_PLEASE_TOKEN` secret, a fine-grained PAT for this repo with Contents and Pull
-  requests read/write. Because of that, CI runs on the PR, and the workflow sets it to
-  auto-merge once the checks pass. That merge triggers the release run, which tags and
-  publishes. The PAT expires; when releases stop, renew it with
-  `gh secret set RELEASE_PLEASE_TOKEN`. If the secret is missing, merge the release PR by hand
-  with `gh pr merge <n> --rebase --admin`.
+- **Releases are fully automated.** release-please opens the release PR with a token from
+  the rhwendt-release-bot GitHub App (`RELEASE_APP_CLIENT_ID` variable, `RELEASE_APP_KEY`
+  secret; the app needs Contents and Pull requests read/write and must be installed on this
+  repo). Because of that, CI runs on the PR, and the workflow sets it to auto-merge once the
+  checks pass. That merge triggers the release run, which tags and publishes. The key doesn't
+  expire; if the app is uninstalled or the key deleted, merge the release PR by hand with
+  `gh pr merge <n> --rebase --admin`.
 - **Submitted to Anthropic's plugin directory (2026-10-05) as v0.2.2,** with a push webhook,
   so pushes to `main`, release merges included, tell the directory about updates. Validation
   passes with two notices that a human reviewer clears, and both recur on every version:
